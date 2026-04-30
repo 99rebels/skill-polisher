@@ -154,7 +154,7 @@ Move, don't delete:
 | Content | Destination |
 |---------|------------|
 | Platform-specific formatting | `references/formatting.md` |
-| Detailed credential setup | `references/setup.md` |
+| Detailed auth/token setup | `references/setup.md` |
 | Extended config reference | `references/configuration.md` |
 | API details / error handling | `references/api.md` |
 | Historical changelogs | `references/changelog.md` |

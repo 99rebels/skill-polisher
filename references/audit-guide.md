@@ -159,7 +159,7 @@ For bundles, include the cross-skill updates and pending fixes sections.
 
 **Flag as potentially risky:**
 - Any security note removal
-- Any credential instruction removal
+- Any setup instruction removal (auth, tokens, API config)
 - Any command path change
 - Any dependency removal
 - Any trigger phrase removal
