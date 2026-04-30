@@ -1,15 +1,14 @@
 ---
 name: skill-polisher
 description: >
-  Polish a skill's SKILL.md for ClawHub readability without sacrificing LLM effectiveness.
-  Use when improving a skill's listing, making a skill look better on ClawHub, or preparing
-  a skill for publish. Rewrites SKILL.md with better formatting, then audits the changes
-  to ensure nothing the LLM needs was lost. Moved content goes to references/ — never deleted.
+  Polishes standalone skills and multi-skill bundles for ClawHub readability without sacrificing LLM effectiveness. Use when improving a skill's listing, making a skill look better on ClawHub, or preparing a skill for publish. Rewrites SKILL.md with better formatting, then audits changes to ensure nothing the LLM needs was lost. Supports cross-skill dependency mapping and regression checking for bundles. Moved content goes to references/ — never deleted.
 ---
 
 # Skill Polisher 🪚
 
 Improve a skill's SKILL.md for ClawHub readability. Run after the skill is built and tested — never before.
+
+Works in two modes: **standalone** (single skill) and **bundle** (multi-skill bundle with shared infrastructure and cross-skill data contracts). Mode is auto-detected from the directory structure.
 
 ## Priority Order
 
@@ -21,6 +20,7 @@ Readability supports these goals. Never sacrifice clarity for aesthetics.
 
 ## How It Works
 
+**Standalone:**
 ```
 1. Read the existing SKILL.md
 2. Rewrite for readability (apply rules from references/)
@@ -28,14 +28,30 @@ Readability supports these goals. Never sacrifice clarity for aesthetics.
 4. Output: polished SKILL.md + audit report + any new reference files
 ```
 
+**Bundle:**
+```
+1. Detect bundle structure
+2. Build dependency map (cross-skill field names, paths, references)
+3. Clean stale §X.Y architecture references across all files
+4. For each sub-skill:
+   a. Rewrite for readability
+   b. Update cross-skill references (already-polished skills)
+   c. Queue fixes for not-yet-polished skills
+   d. Run regression check
+   e. Audit the rewrite
+5. Cross-validation pass (final contract verification)
+6. Output: polished SKILL.md files + audit reports + reference files
+```
+
+See [references/bundle-rules.md](references/bundle-rules.md) for the full bundle workflow.
+
 ## Before Polishing
 
 Ensure the skill is:
 - ✅ Functionally working (scripts tested)
-- ✅ Validated (`quick_validate.py` passes)
 - ✅ Description is correct (triggers on the right queries)
 
-If any of these fail, fix them first. Don't polish a broken skill.
+If either fails, fix first. Don't polish a broken skill.
 
 ## Polishing Rules
 
@@ -46,7 +62,7 @@ Key principles:
 - Code blocks for lists — renders as visual boxes on ClawHub
 - Emoji as section anchors — 🔒 📊 ⚡ give instant visual context
 - One code block per concept — not three variations for three platforms
-- "Why" and "When to Use" sections — help browsers understand value
+- **Protected content stays inline** — behavioral contracts, safety rules, data integrity constraints never get moved to references/
 
 ## What Gets Moved to references/
 
@@ -54,21 +70,29 @@ Content that's valuable but doesn't belong in the storefront:
 
 - Platform-specific formatting examples (Slack, WhatsApp, Discord)
 - Detailed credential setup tutorials
-- Implementation notes (API rate limits, edge cases, gotchas)
 - Extended configuration reference
 - Historical changelogs
 
 **Rule: Content is moved, never deleted. Every reference file must be valid and useful.**
 
+**Exceptions — never move these:**
+- Anti-hallucination / data integrity rules
+- Safety constraints ("does NOT do", "what NOT to do")
+- Confirmation requirements (when to ask the user)
+- Interactive behavior rules (auto-proceed vs ask)
+- Display format contracts (pipeline views, output templates)
+- Cross-skill data contracts (field names, report structures, shared paths)
+- Content referenced by other skills in the bundle
+
 ## The Audit
 
 After rewriting, compare the original against the polished version. Flag:
-
 ```
 ⚠ Potentially risky changes:
+• Protected content moved to references/
+• Cross-skill data contract broken
 • Security notes removed
 • Credential instructions lost
-• Implementation details dropped without a reference file
 • Trigger phrases removed from description
 • Reference files created but empty or incomplete
 ```
@@ -77,20 +101,27 @@ See [references/audit-guide.md](references/audit-guide.md) for the full audit ch
 
 ## Output
 
-Present three things to the user:
+Present to the user:
 
-1. **The polished SKILL.md** — ready to review
-2. **Any new reference files** — created from moved content
-3. **Audit report** — what changed, what was moved, anything flagged
+**Standalone:** polished SKILL.md + any new reference files + audit report.
 
-Wait for user approval before overwriting the original.
+**Bundle:** polished SKILL.md per sub-skill + any new reference files + audit report per sub-skill + final cross-validation report.
+
+Wait for user approval before overwriting originals.
 
 ## When to Use
 
 - "Make this skill look better on ClawHub"
 - "Polish my SKILL.md"
 - "Improve this skill's listing"
-- "Ready to publish, but clean it up first"
+- "Polish my bundle"
+- "Clean up these skills"
+
+## When NOT to Use
+
+- On extracted/inline sub-skills from a bundle install. These are flat copies that have lost their bundle context. The polisher needs the original nested bundle structure to preserve cross-skill contracts. If you spot signs of an extracted sub-skill (references to shared directories like `$WEBCLIENT_STUDIO_CONFIG_DIR/shared/`, cross-skill field names, or bundle-specific env vars), advise the user to point the polisher at the full bundle source instead.
+- On skills that aren't functionally working yet.
+- As a replacement for the skill-creator — this polishes existing skills, it doesn't build them.
 
 ## Not a Replacement for skill-creator
 
